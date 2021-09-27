@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import java.util.HashMap;
 
 public class MusicPlayer {
-    HashMap<String, AudioPlayer> players = new HashMap<String, AudioPlayer>();
+    HashMap<String, GuildConnectionInfo> guilds = new HashMap<String, GuildConnectionInfo>();
     public AudioPlayerManager playerManager;
 
     public MusicPlayer(){
@@ -21,36 +21,49 @@ public class MusicPlayer {
         AudioSourceManagers.registerLocalSource(playerManager);
     }
 
-    public AudioPlayer getPlayerForVC(VoiceChannel vc) { return players.get(vc.getGuild().getId()); }
+    public GuildConnectionInfo getGuild(String guildId) { return guilds.get(guildId); }
+    public boolean getIsConnected(String guildId) {
+        GuildConnectionInfo guild = guilds.get(guildId);
+        if(guild == null) return false;
+        return guild.getDiscordAudioManager().isConnected();
+    }
 
-    public boolean connect(VoiceChannel vc){
+    public boolean connect(VoiceChannel vc, GuildQueue guildQueue){
         AudioManager discordAudioManager = vc.getGuild().getAudioManager();
         if(!discordAudioManager.isConnected()){
             discordAudioManager.openAudioConnection(vc);
             AudioPlayer player = this.playerManager.createPlayer();
-            player.addListener(Main.queueManager);
-            players.put(vc.getGuild().getId(), player);
+            player.addListener(guildQueue);
+            guilds.put(vc.getGuild().getId(), new GuildConnectionInfo(vc.getId(), discordAudioManager, player));
             discordAudioManager.setSendingHandler(new AudioPlayerSendHandler(player));
             return true;
         }
         return false;
     }
 
-    public boolean playTrack(AudioTrack track, VoiceChannel vc){
-        connect(vc);
-        return getPlayerForVC(vc).startTrack(track.makeClone(), false);
+    public boolean playTrack(AudioTrack track, String guildId){
+        if(!getIsConnected(guildId)) return false;
+        return getGuild(guildId).getPlayer().startTrack(track.makeClone(), false);
     }
 
-    public void stopTrack(VoiceChannel vc){
-        getPlayerForVC(vc).stopTrack();
+    public boolean stopTrack(String guildId) {
+        if(!getIsConnected(guildId)) return false;
+        getGuild(guildId).getPlayer().stopTrack();
+        return true;
     }
-
-    public void setPaused(boolean paused, VoiceChannel vc){
-        getPlayerForVC(vc).setPaused(paused);
+    public boolean setPaused(boolean paused, String guildId){
+        if(!getIsConnected(guildId)) return false;
+        getGuild(guildId).getPlayer().setPaused(paused);
+        return true;
     }
-    public boolean getIsPaused(String guildId) { return players.get(guildId).isPaused(); }
-
-    public boolean getIsPlaying(String guildId) { return players.get(guildId) != null && players.get(guildId).getPlayingTrack() != null; }
+    public boolean getIsPaused(String guildId) {
+        if(!getIsConnected(guildId)) return false;
+        return getGuild(guildId).getPlayer().isPaused();
+    }
+    public boolean getIsTrackPlaying(String guildId) {
+        if(!getIsConnected(guildId)) return false;
+        return getGuild(guildId).getPlayer().getPlayingTrack() != null;
+    }
 
     public void loadTrack(String url, final TrackLoadHandler callback){
         playerManager.loadItemOrdered(this, url, new AudioLoadResultHandler() {
@@ -69,10 +82,10 @@ public class MusicPlayer {
         });
     }
 
-    public void playTrackFromURL(String url, final VoiceChannel vc, final TrackPlayHandler callback){
+    public void playTrackFromURL(String url, final String guildId, final TrackPlayHandler callback){
         loadTrack(url, new TrackLoadHandler() {
             public void onTrackLoaded(AudioTrack track) {
-                playTrack(track, vc);
+                playTrack(track, guildId);
                 callback.onTrackPlaySuccess();
             }
             public void onFailure(String reason){

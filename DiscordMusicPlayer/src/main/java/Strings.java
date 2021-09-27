@@ -8,4 +8,8 @@ public class Strings {
 
     public static final String CONNECTED_TO_VC = "✅ Joined `%s`.";
     public static final String ADDED_TO_QUEUE = "✅ Track added to queue";
+    public static final String ADDED_TO_TOP = "✅ Track will play next";
+    public static final String TRACK_SKIPPED = "✅ Track skipped";
+    public static final String PAUSED = "⏸ Paused";
+    public static final String RESUMED = "▶ Resumed️";
 }
