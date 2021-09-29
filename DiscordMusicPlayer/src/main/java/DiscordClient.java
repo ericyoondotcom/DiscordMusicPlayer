@@ -43,6 +43,7 @@ public class DiscordClient extends ListenerAdapter {
         updateAction.addCommands(new CommandData("queue", "Sends the current queue."));
         updateAction.addCommands(new CommandData("clear", "Clears the queue."));
         updateAction.addCommands(new CommandData("leave", "Disconnects from the voice channel."));
+        updateAction.addCommands(new CommandData("shuffle", "Randomizes the queue."));
         updateAction.queue();
     }
 
@@ -132,6 +133,11 @@ public class DiscordClient extends ListenerAdapter {
             } else {
                 event.reply(Strings.BOT_NOT_CONNECTED_ERROR).queue();
             }
+        }
+        else if(event.getName().equals("shuffle"))
+        {
+            queue.shuffleQueue();
+            event.reply(Strings.QUEUE_SHUFFLED).queue();
         }
         else
         {

@@ -11,6 +11,8 @@ import net.dv8tion.jda.api.entities.VoiceChannel;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 
 public class GuildQueue extends AudioEventAdapter {
     TrackInfo nowPlaying = null;
@@ -65,6 +67,10 @@ public class GuildQueue extends AudioEventAdapter {
 
     public void clearQueue(){
         queue.clear();
+    }
+
+    public void shuffleQueue(){
+        Collections.shuffle(queue, new Random());
     }
 
     public void startNextTrack(){
