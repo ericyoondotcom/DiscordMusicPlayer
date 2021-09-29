@@ -41,6 +41,8 @@ public class DiscordClient extends ListenerAdapter {
         updateAction.addCommands(new CommandData("pause", "Pause playback."));
         updateAction.addCommands(new CommandData("resume", "Resume playback."));
         updateAction.addCommands(new CommandData("queue", "Sends the current queue."));
+        updateAction.addCommands(new CommandData("clear", "Clears the queue."));
+        updateAction.addCommands(new CommandData("leave", "Disconnects from the voice channel."));
         updateAction.queue();
     }
 
@@ -51,11 +53,12 @@ public class DiscordClient extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommand(SlashCommandEvent event) {
+    public void onSlashCommand(final SlashCommandEvent event) {
         VoiceChannel vc = event.getMember().getVoiceState().getChannel();
         GuildQueue queue = Main.queueManager.getOrCreateQueue(event.getMember().getGuild().getId());
 
-        if (event.getName().equals("join")) {
+        if (event.getName().equals("join"))
+        {
             if (vc == null) {
                 event.reply(Strings.NOT_IN_VC_ERROR).queue();
                 return;
@@ -64,35 +67,74 @@ public class DiscordClient extends ListenerAdapter {
                 event.reply(String.format(Strings.CONNECTED_TO_VC, vc.getName())).queue();
             else
                 event.reply(String.format(Strings.ALREADY_CONNECTED_ERROR, vc.getName())).queue();
-        } else if (event.getName().equals("play")) {
+        }
+        else if (event.getName().equals("play") || event.getName().equals("playtop"))
+        {
+            final boolean playTop = event.getName().equals("playtop");
             if (vc == null) { event.reply(Strings.NOT_IN_VC_ERROR).queue(); return; }
             if (event.getOption("track") == null) { event.reply(Strings.MISSING_TRACK_OPTION_ERROR).queue(); return; }
             event.deferReply().queue();
             queue.connect(vc);
             TrackInfo track = Main.apiManager.parseTrackString(event.getOption("track").getAsString(), event.getMember().getId());
-            queue.addToQueue(track);
-            event.getHook().sendMessage(Strings.ADDED_TO_QUEUE).queue();
-        } else if (event.getName().equals("playtop")) {
-            if (vc == null) { event.reply(Strings.NOT_IN_VC_ERROR).queue(); return; }
-            if (event.getOption("track") == null) { event.reply(Strings.MISSING_TRACK_OPTION_ERROR).queue(); return; }
-            event.deferReply().queue();
-            queue.connect(vc);
-            TrackInfo track = Main.apiManager.parseTrackString(event.getOption("track").getAsString(), event.getMember().getId());
-            queue.addAtIndex(track, 0);
-            event.getHook().sendMessage(Strings.ADDED_TO_TOP).queue();
-        } else if (event.getName().equals("skip")) {
+            QueueAddHandler handler = new QueueAddHandler() {
+                public void onTrackLoadSuccess(TrackInfo info) {
+                    if(playTop)
+                        event.getHook().sendMessage(String.format(Strings.ADDED_TO_TOP, info.name)).queue();
+                    else
+                        event.getHook().sendMessage(String.format(Strings.ADDED_TO_QUEUE, info.name)).queue();
+                }
+                public void onPlaylistLoadSuccess(TrackInfo[] tracks, String playlistName) {
+                    if(playTop)
+                        event.getHook().sendMessage(String.format(Strings.PLAYLIST_ADDED_TO_TOP, tracks.length, playlistName)).queue();
+                    else
+                        event.getHook().sendMessage(String.format(Strings.PLAYLIST_ADDED_TO_QUEUE, tracks.length, playlistName)).queue();
+                }
+                public void onFailure(String reason) {
+                    event.getHook().sendMessage(reason).queue();
+                }
+            };
+            if(playTop)
+                queue.addAtIndex(track, 0, handler);
+            else
+                queue.addToQueue(track, handler);
+
+        }
+        else if (event.getName().equals("skip"))
+        {
             queue.connect(vc);
             queue.startNextTrack();
             event.reply(Strings.TRACK_SKIPPED).queue();
-        } else if (event.getName().equals("pause")) {
+        }
+        else if (event.getName().equals("pause"))
+        {
             Main.musicPlayer.setPaused(true, vc.getGuild().getId());
             event.reply(Strings.PAUSED).queue();
-        } else if (event.getName().equals("resume")) {
+        }
+        else if (event.getName().equals("resume"))
+        {
             Main.musicPlayer.setPaused(false, vc.getGuild().getId());
             event.reply(Strings.RESUMED).queue();
-        } else if (event.getName().equals("queue")) {
+        }
+        else if (event.getName().equals("queue"))
+        {
             event.replyEmbeds(queue.displayAsEmbed()).queue();
-        } else {
+        }
+        else if(event.getName().equals("clear"))
+        {
+            queue.clearQueue();
+            event.reply(Strings.QUEUE_CLEARED).queue();
+        }
+        else if(event.getName().equals("leave"))
+        {
+            if(Main.musicPlayer.disconnect(queue.guildId)){
+                queue.clearQueue();
+                event.reply(Strings.BOT_DISCONNECT_SUCCESS).queue();
+            } else {
+                event.reply(Strings.BOT_NOT_CONNECTED_ERROR).queue();
+            }
+        }
+        else
+        {
             System.out.println("Unrecognized command: " + event.getName());
         }
     }

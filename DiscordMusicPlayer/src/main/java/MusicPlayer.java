@@ -41,6 +41,12 @@ public class MusicPlayer {
         return false;
     }
 
+    public boolean disconnect(String guildId){
+        if(!getIsConnected(guildId)) return false;
+        getGuild(guildId).getDiscordAudioManager().closeAudioConnection();
+        return true;
+    }
+
     public boolean playTrack(AudioTrack track, String guildId){
         if(!getIsConnected(guildId)) return false;
         return getGuild(guildId).getPlayer().startTrack(track.makeClone(), false);
@@ -71,7 +77,7 @@ public class MusicPlayer {
                 callback.onTrackLoaded(audioTrack);
             }
             public void playlistLoaded(AudioPlaylist playlist) {
-                callback.onFailure(Strings.PLAYLIST_NOT_SUPPORTED_ERROR);
+                callback.onPlaylistLoaded(playlist);
             }
             public void noMatches() {
                 callback.onFailure(Strings.URL_NOT_FOUND_ERROR);
@@ -82,11 +88,15 @@ public class MusicPlayer {
         });
     }
 
-    public void playTrackFromURL(String url, final String guildId, final TrackPlayHandler callback){
+    public void loadAndPlayTrackFromURL(String url, final String guildId, final TrackPlayHandler callback){
         loadTrack(url, new TrackLoadHandler() {
             public void onTrackLoaded(AudioTrack track) {
                 playTrack(track, guildId);
+                System.out.println(track.getInfo().title);
                 callback.onTrackPlaySuccess();
+            }
+            public void onPlaylistLoaded(AudioPlaylist playlist){
+
             }
             public void onFailure(String reason){
                 callback.onFailure(reason);

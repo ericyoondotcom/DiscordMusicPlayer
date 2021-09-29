@@ -16,6 +16,6 @@ public class APIManager {
      */
     public TrackInfo parseTrackString(String str, String messageAuthorId){
         // TODO
-        return new TrackInfo(str, str, messageAuthorId);
+        return new TrackInfo(str, str, messageAuthorId, null);
     }
 }

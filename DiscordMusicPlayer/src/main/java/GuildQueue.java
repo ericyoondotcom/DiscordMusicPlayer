@@ -1,5 +1,6 @@
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -24,33 +25,52 @@ public class GuildQueue extends AudioEventAdapter {
         return Main.musicPlayer.connect(vc, this);
     }
 
-    public void addToQueue(TrackInfo track){
-        queue.add(track);
-        if(!Main.musicPlayer.getIsTrackPlaying(guildId)){
-            startNextTrack();
-        }
+    public void addToQueue(final TrackInfo track, final QueueAddHandler handler){
+        addAtIndex(track, queue.size(), handler);
     }
 
-    public void addAtIndex(TrackInfo track, int index){
-        queue.add(index, track);
-        if(!Main.musicPlayer.getIsTrackPlaying(guildId)){
-            startNextTrack();
-        }
+    public void addAtIndex(final TrackInfo track, final int index, final QueueAddHandler handler){
+        Main.musicPlayer.loadTrack(track.url, new TrackLoadHandler() {
+            public void onTrackLoaded(AudioTrack audioTrack) {
+                queue.add(index, track);
+                track.name = audioTrack.getInfo().title;
+                track.loadedAudioTrack = audioTrack;
+                if(!Main.musicPlayer.getIsTrackPlaying(guildId)){
+                    startNextTrack();
+                }
+                handler.onTrackLoadSuccess(track);
+            }
+            public void onPlaylistLoaded(AudioPlaylist playlist){
+                int i = 0;
+                TrackInfo[] ret = new TrackInfo[playlist.getTracks().size()];
+                for(AudioTrack audioTrack : playlist.getTracks()){
+                    TrackInfo newTrack = new TrackInfo(audioTrack.getInfo().uri, audioTrack.getInfo().title, track.addedByID, audioTrack);
+                    ret[i] = newTrack;
+                    queue.add(index + i, newTrack);
+                    i++;
+                }
+                if(!Main.musicPlayer.getIsTrackPlaying(guildId)){
+                    startNextTrack();
+                }
+                handler.onPlaylistLoadSuccess(ret, playlist.getName());
+            }
+            public void onFailure(String reason){
+                handler.onFailure(reason);
+            }
+        });
+
     }
 
     public int queueLength() { return queue.size(); }
 
+    public void clearQueue(){
+        queue.clear();
+    }
+
     public void startNextTrack(){
         if(queueLength() == 0) return;
-
-        Main.musicPlayer.playTrackFromURL(queue.get(0).url, guildId, new TrackPlayHandler() {
-            public void onTrackPlaySuccess() {
-                nowPlaying = queue.remove(0);
-            }
-            public void onFailure(String reason) {
-                queue.remove(0);
-            }
-        });
+        Main.musicPlayer.playTrack(queue.get(0).loadedAudioTrack, guildId);
+        nowPlaying = queue.remove(0);
     }
 
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason){
@@ -66,8 +86,8 @@ public class GuildQueue extends AudioEventAdapter {
         builder.setTitle("Queue for " + guild.getName()).setColor(Color.CYAN);
         if(nowPlaying != null) {
             Member addedBy = guild.getMemberById(nowPlaying.addedByID);
-            StringBuilder fieldBuilder = new StringBuilder()
-                    .append("[")
+            builder.getDescriptionBuilder()
+                    .append("**Now Playing**\n[")
                     .append(nowPlaying.name)
                     .append("](")
                     .append(nowPlaying.url)
@@ -77,18 +97,17 @@ public class GuildQueue extends AudioEventAdapter {
                     .append(addedBy.getUser().getName())
                     .append("#")
                     .append(addedBy.getUser().getDiscriminator())
-                    .append(")`");
-            builder.addField(new MessageEmbed.Field("Now Playing", fieldBuilder.toString(), false));
+                    .append(")`\n\n");
         }
         if(queueLength() > 0){
-            StringBuilder fieldBuilder = new StringBuilder();
-            for(int i = 0; i < queueLength(); i++){
+            // TODO: Pagination
+            for(int i = 0; i < Math.min(10, queueLength()); i++){
                 TrackInfo track = queue.get(i);
                 Member addedBy = guild.getMemberById(track.addedByID);
-                if(i != 0) fieldBuilder.append("\n");
-                fieldBuilder
+                builder.getDescriptionBuilder()
+                        .append(i == 0 ? "**Queue**\n" : "\n")
                         .append("`")
-                        .append(i)
+                        .append(i + 1)
                         .append(".` ")
                         .append("[")
                         .append(track.name)
@@ -102,7 +121,6 @@ public class GuildQueue extends AudioEventAdapter {
                         .append(addedBy.getUser().getDiscriminator())
                         .append(")`");
             }
-            builder.addField(new MessageEmbed.Field("Up Next", fieldBuilder.toString(), false));
         } else {
             builder.setDescription("The queue is empty! Add some tracks using `/play`.");
         }
