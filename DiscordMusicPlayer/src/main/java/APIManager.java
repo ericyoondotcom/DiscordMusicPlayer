@@ -21,16 +21,18 @@ public class APIManager {
         boolean isUrl;
         try { new URL(clean); isUrl = true; } catch(MalformedURLException e) { isUrl = false; }
         if(isUrl){
-            callback.onTrackFound(new TrackInfo(str, str, messageAuthorId, null));
+            callback.onTrackFound(new TrackInfo(clean, clean, messageAuthorId, null));
+            return;
         }
         getService("youtube").searchForTrack(clean, new SearchResultHandler() {
             public void onResultFound(String trackURL, String trackName) {
                 callback.onTrackFound(new TrackInfo(trackURL, trackName, messageAuthorId, null));
             }
-            public void onNoResults() { callback.onNoSearchResults(); }
+            public void onNoResults() { callback.onNoSearchResults(); return; }
             public void onError(Exception e) {
                 System.out.println(e.toString());
                 callback.onError(e);
+                return;
             }
         });
     }

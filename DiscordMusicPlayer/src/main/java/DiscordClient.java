@@ -39,6 +39,7 @@ public class DiscordClient extends ListenerAdapter {
             updateAction = client.updateCommands();
         }
         String d = debugGuildId == null ? "" : "[DEBUG] ";
+        // To delete commands, just comment out the following lines
         updateAction.addCommands(new CommandData("join", d+"Connect to your voice channel."));
         updateAction.addCommands(new CommandData("play", d+"Add a track to the end of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
         updateAction.addCommands(new CommandData("playtop", d+"Add a track to the beginning of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
