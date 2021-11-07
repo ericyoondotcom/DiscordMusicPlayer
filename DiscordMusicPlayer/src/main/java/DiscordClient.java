@@ -2,6 +2,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
@@ -27,6 +28,9 @@ public class DiscordClient extends ListenerAdapter {
 
     void registerSlashCommands(){
         String debugGuildId = Main.config.getString("discord.commands_debug_guild");
+        if(debugGuildId != null){
+            System.out.println("Using debug guild " + debugGuildId + "!");
+        }
         CommandListUpdateAction updateAction;
         if(debugGuildId != null){
             Guild debugGuild = client.getGuildById(debugGuildId);
@@ -34,16 +38,17 @@ public class DiscordClient extends ListenerAdapter {
         } else {
             updateAction = client.updateCommands();
         }
-        updateAction.addCommands(new CommandData("join", "Connect to your voice channel."));
-        updateAction.addCommands(new CommandData("play", "Add a track to the end of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
-        updateAction.addCommands(new CommandData("playtop", "Add a track to the beginning of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
-        updateAction.addCommands(new CommandData("skip", "Skips the next track(s) in the queue.").addOption(OptionType.INTEGER, "count", "How many tracks to skip.", false));
-        updateAction.addCommands(new CommandData("pause", "Pause playback."));
-        updateAction.addCommands(new CommandData("resume", "Resume playback."));
-        updateAction.addCommands(new CommandData("queue", "Sends the current queue."));
-        updateAction.addCommands(new CommandData("clear", "Clears the queue."));
-        updateAction.addCommands(new CommandData("leave", "Disconnects from the voice channel."));
-        updateAction.addCommands(new CommandData("shuffle", "Randomizes the queue."));
+        String d = debugGuildId == null ? "" : "[DEBUG] ";
+        updateAction.addCommands(new CommandData("join", d+"Connect to your voice channel."));
+        updateAction.addCommands(new CommandData("play", d+"Add a track to the end of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
+        updateAction.addCommands(new CommandData("playtop", d+"Add a track to the beginning of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
+        updateAction.addCommands(new CommandData("skip", d+"Skips the next track(s) in the queue.").addOption(OptionType.INTEGER, "count", "How many tracks to skip.", false));
+        updateAction.addCommands(new CommandData("pause", d+"Pause playback."));
+        updateAction.addCommands(new CommandData("resume", d+"Resume playback."));
+        updateAction.addCommands(new CommandData("queue", d+"Sends the current queue."));
+        updateAction.addCommands(new CommandData("clear", d+"Clears the queue."));
+        updateAction.addCommands(new CommandData("leave", d+"Disconnects from the voice channel."));
+        updateAction.addCommands(new CommandData("shuffle", d+"Randomizes the queue."));
         updateAction.queue();
     }
 
@@ -56,7 +61,7 @@ public class DiscordClient extends ListenerAdapter {
     @Override
     public void onSlashCommand(final SlashCommandEvent event) {
         VoiceChannel vc = event.getMember().getVoiceState().getChannel();
-        GuildQueue queue = Main.queueManager.getOrCreateQueue(event.getMember().getGuild().getId());
+        final GuildQueue queue = Main.queueManager.getOrCreateQueue(event.getMember().getGuild().getId());
 
         if (event.getName().equals("join"))
         {
@@ -64,10 +69,14 @@ public class DiscordClient extends ListenerAdapter {
                 event.reply(Strings.NOT_IN_VC_ERROR).queue();
                 return;
             }
-            if (queue.connect(vc))
-                event.reply(String.format(Strings.CONNECTED_TO_VC, vc.getName())).queue();
-            else
+            if (queue.connect(vc)) {
+                if(queue.queueLength() == 0)
+                    event.reply(String.format(Strings.CONNECTED_TO_VC, vc.getName())).queue();
+                else
+                    event.reply(String.format(Strings.CONNECTED_TO_VC_QUEUE_PRESERVED, vc.getName())).addEmbeds(queue.displayAsEmbed()).queue();
+            } else {
                 event.reply(String.format(Strings.ALREADY_CONNECTED_ERROR, vc.getName())).queue();
+            }
         }
         else if (event.getName().equals("play") || event.getName().equals("playtop"))
         {
@@ -76,29 +85,30 @@ public class DiscordClient extends ListenerAdapter {
             if (event.getOption("track") == null) { event.reply(Strings.MISSING_TRACK_OPTION_ERROR).queue(); return; }
             event.deferReply().queue();
             queue.connect(vc);
-            TrackInfo track = Main.apiManager.parseTrackString(event.getOption("track").getAsString(), event.getMember().getId());
-            QueueAddHandler handler = new QueueAddHandler() {
-                public void onTrackLoadSuccess(TrackInfo info) {
-                    if(playTop)
-                        event.getHook().sendMessage(String.format(Strings.ADDED_TO_TOP, info.name)).queue();
-                    else
-                        event.getHook().sendMessage(String.format(Strings.ADDED_TO_QUEUE, info.name)).queue();
+            final String searchQuery = event.getOption("track").getAsString();
+            Main.apiManager.parseTrackString(searchQuery, event.getMember().getId(), new ParseTrackStringHandler() {
+                public void onTrackFound(TrackInfo track) {
+                    QueueAddHandler handler = new QueueAddHandler() {
+                        public void onTrackLoadSuccess(TrackInfo info) {
+                            if(playTop) event.getHook().sendMessage(String.format(Strings.ADDED_TO_TOP, info.name)).queue();
+                            else event.getHook().sendMessage(String.format(Strings.ADDED_TO_QUEUE, info.name)).queue();
+                        }
+                        public void onPlaylistLoadSuccess(TrackInfo[] tracks, String playlistName) {
+                            if(playTop) event.getHook().sendMessage(String.format(Strings.PLAYLIST_ADDED_TO_TOP, tracks.length, playlistName)).queue();
+                            else event.getHook().sendMessage(String.format(Strings.PLAYLIST_ADDED_TO_QUEUE, tracks.length, playlistName)).queue();
+                        }
+                        public void onFailure(String reason) {
+                            event.getHook().sendMessage(reason).queue();
+                        }
+                    };
+                    if(playTop) queue.addAtIndex(track, 0, handler);
+                    else queue.addToQueue(track, handler);
                 }
-                public void onPlaylistLoadSuccess(TrackInfo[] tracks, String playlistName) {
-                    if(playTop)
-                        event.getHook().sendMessage(String.format(Strings.PLAYLIST_ADDED_TO_TOP, tracks.length, playlistName)).queue();
-                    else
-                        event.getHook().sendMessage(String.format(Strings.PLAYLIST_ADDED_TO_QUEUE, tracks.length, playlistName)).queue();
+                public void onNoSearchResults() {
+                    event.getHook().sendMessage(String.format(Strings.NO_RESULTS_FOUND, searchQuery)).queue();
                 }
-                public void onFailure(String reason) {
-                    event.getHook().sendMessage(reason).queue();
-                }
-            };
-            if(playTop)
-                queue.addAtIndex(track, 0, handler);
-            else
-                queue.addToQueue(track, handler);
-
+                public void onError(Exception e) { event.getHook().sendMessage(Strings.UNKNOWN_ERROR).queue(); }
+            });
         }
         else if (event.getName().equals("skip"))
         {
@@ -128,7 +138,7 @@ public class DiscordClient extends ListenerAdapter {
         else if(event.getName().equals("leave"))
         {
             if(Main.musicPlayer.disconnect(queue.guildId)){
-                queue.clearQueue();
+//                queue.clearQueue();
                 event.reply(Strings.BOT_DISCONNECT_SUCCESS).queue();
             } else {
                 event.reply(Strings.BOT_NOT_CONNECTED_ERROR).queue();

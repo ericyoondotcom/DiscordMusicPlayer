@@ -4,6 +4,7 @@ SUSAN >:(
 ## Configuration Options
 - `discord.token`: your Discord bot token.
 - `discord.commands_debug_guild`: set to a guild ID to register guild commands intead of global commands for easier debugging.
+- `google.api_key`: your Google Cloud project API key.
 
 ## Building from source
 - Install all Maven packages from pom.xml.
@@ -14,7 +15,7 @@ repoint MANIFEST.MF from `.../main/java` to `.../main/resources`, and press "Bui
 Since pm2 gets a bit strange when calling JARs with Java, we have to create a bash script that starts the Java process.
 ```bash
 #!/bin/bash
-java -jar DiscordMusicPlayer.ja
+java -jar DiscordMusicPlayer.jar
 ```
 
 Then, add the process:

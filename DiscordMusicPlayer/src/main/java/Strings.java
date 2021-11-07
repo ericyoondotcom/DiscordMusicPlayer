@@ -1,12 +1,15 @@
 public class Strings {
+    public static final String UNKNOWN_ERROR = "❌ An unknown error occurred!";
     public static final String NOT_IN_VC_ERROR = "❌ You must be connected to a voice channel to use this command!";
     public static final String BOT_NOT_CONNECTED_ERROR = "❌ I'm not connected to a voice channel yet!";
     public static final String ALREADY_CONNECTED_ERROR = "ℹ️ Already connected to `%s`.";
     public static final String URL_NOT_FOUND_ERROR = "❌ Could not play track: URL not found.";
     public static final String LOAD_FAILED_ERROR = "❌ Track failed to load.";
     public static final String MISSING_TRACK_OPTION_ERROR = "❌ Please enter a track name or URL.";
+    public static final String NO_RESULTS_FOUND = "❌ No results found for `%s`.";
 
     public static final String CONNECTED_TO_VC = "✅ Joined `%s`.";
+    public static final String CONNECTED_TO_VC_QUEUE_PRESERVED = "✅ Joined `%s`. Queue has been recalled.";
     public static final String ADDED_TO_QUEUE = "✅ `%s` added to queue";
     public static final String PLAYLIST_ADDED_TO_QUEUE = "✅ %d tracks from `%s` added to queue";
     public static final String ADDED_TO_TOP = "✅ `%s` will play next";
