@@ -50,6 +50,7 @@ public class DiscordClient extends ListenerAdapter {
         updateAction.addCommands(new CommandData("clear", d+"Clears the queue."));
         updateAction.addCommands(new CommandData("leave", d+"Disconnects from the voice channel."));
         updateAction.addCommands(new CommandData("shuffle", d+"Randomizes the queue."));
+        updateAction.addCommands(new CommandData("loop", d+"Toggels looping for the queue."));
         updateAction.queue();
     }
 
@@ -73,6 +74,7 @@ public class DiscordClient extends ListenerAdapter {
             if (queue.connect(vc)) {
                 if(queue.queueLength() == 0)
                     event.reply(String.format(Strings.CONNECTED_TO_VC, vc.getName())).queue();
+                    looping = false;
                 else
                     event.reply(String.format(Strings.CONNECTED_TO_VC_QUEUE_PRESERVED, vc.getName())).addEmbeds(queue.displayAsEmbed()).queue();
             } else {
@@ -149,6 +151,14 @@ public class DiscordClient extends ListenerAdapter {
         {
             queue.shuffleQueue();
             event.reply(Strings.QUEUE_SHUFFLED).queue();
+        }
+        else if(event.getName().equals("loop"))
+        {
+            if (queue.toggleLoop()) {
+                event.reply(Strings.QUEUE_LOOPED).queue();
+            } else {
+                event.reply(Strings.QUEUE_UNLOOPED).queue();
+            }
         }
         else
         {

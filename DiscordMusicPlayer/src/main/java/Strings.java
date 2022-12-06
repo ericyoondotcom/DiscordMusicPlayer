@@ -20,4 +20,8 @@ public class Strings {
     public static final String QUEUE_CLEARED = "\uD83D\uDCA5 Queue cleared!";
     public static final String BOT_DISCONNECT_SUCCESS = "Bye \uD83E\uDD72";
     public static final String QUEUE_SHUFFLED = "\uD83D\uDD00 Queue shuffled!";
+    public static final String QUEUE_LOOPED = "Song looped!";
+    public static final String QUEUE_UNLOOPED = "Looped stoped!";
+
+
 }
