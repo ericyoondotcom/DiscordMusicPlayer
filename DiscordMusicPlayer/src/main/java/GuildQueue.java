@@ -18,7 +18,9 @@ public class GuildQueue extends AudioEventAdapter {
     TrackInfo nowPlaying = null;
     ArrayList<TrackInfo> queue = new ArrayList<TrackInfo>();
     String guildId;
-    boolean looping = false; // controlls wether the individual song loops
+
+    boolean looping = false;
+    boolean loopingTop = false;
 
     public GuildQueue(String guildId){
         this.guildId = guildId;
@@ -81,42 +83,18 @@ public class GuildQueue extends AudioEventAdapter {
     }
 
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason){
-        // nowPlaying = null;
-        if(endReason == AudioTrackEndReason.FINISHED && endReason.mayStartNext){
-            if (looping) {
-                // quick fix that never works
+        if (endReason == AudioTrackEndReason.FINISHED && endReason.mayStartNext){
+            if (loopingTop) {
                 queue.add(0, nowPlaying);
-
-                // alternative that will very likely work
-                /*
-                // uses a unique handler to not inform user on each loop
-                QueueAddHandler silentHandler = new QueueAddHandler() {
-                    //these methods will only ever add at start
-                    public void onTrackLoadSuccess(TrackInfo info) {
-                        //if (beVerbose) { // beVerbose is not declared anywhere but could be in config
-                        //    event.getHook().sendMessage(String.format(Strings.ADDED_TO_TOP, info.name)).queue();
-                        //}
-                    }
-                    public void onPlaylistLoadSuccess(TrackInfo[] tracks, String playlistName) {
-                        //if (beVerbose) { // beVerbose is not declared anywhere but could be in config
-                        //    event.getHook().sendMessage(String.format(Strings.PLAYLIST_ADDED_TO_TOP, tracks.length, playlistName)).queue();
-                        //}
-                    }
-                    public void onFailure(String reason) {
-                        event.getHook().sendMessage(reason).queue();
-                    }
-                };
-
-                addAtIndex(track, 0, silentHandler)
-                */
-            } else {
-                nowPlaying = null; // Statement 1
+            } else if (looping) {
+                queue.add(queue.size(), nowPlaying);
             }
 
+            nowPlaying = null;
             startNextTrack();
 
         } else {
-            nowPlaying = null; // Is exclusive from Statement 1 (look line 113)
+            nowPlaying = null;
         }
     }
 
@@ -167,13 +145,34 @@ public class GuildQueue extends AudioEventAdapter {
         return builder.build();
     }
 
+    // @dev Changes the value of the loop while ensureing their is only one type active at a time
+    // @returns a boolean that repersents the new value of the loop state
     public boolean toggleLoop() {
         if (!looping) {
             looping = true;
+            loopingTop = false;
             return true;
         } else {
             looping = false;
-            return false
+            return false;
         }
+    }
+
+    // @dev Changes the value of the loop while ensureing their is only one type active at a time
+    // @returns a boolean that repersents the new value of the loop state
+    public boolean toggleLooptop() {
+        if (!loopingTop) {
+            loopingTop = true;
+            looping = false;
+            return true;
+        } else {
+            looping = false;
+            return false;
+        }
+    }
+
+    public void resetLoop() {
+        loopingTop = false;
+        looping = false;
     }
 }

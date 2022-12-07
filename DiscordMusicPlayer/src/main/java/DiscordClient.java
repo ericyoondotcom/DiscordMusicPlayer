@@ -51,6 +51,7 @@ public class DiscordClient extends ListenerAdapter {
         updateAction.addCommands(new CommandData("leave", d+"Disconnects from the voice channel."));
         updateAction.addCommands(new CommandData("shuffle", d+"Randomizes the queue."));
         updateAction.addCommands(new CommandData("loop", d+"Toggels looping for the queue."));
+        updateAction.addCommands(new CommandData("looptop", d+"Toggels looping for the first song."));
         updateAction.queue();
     }
 
@@ -72,11 +73,13 @@ public class DiscordClient extends ListenerAdapter {
                 return;
             }
             if (queue.connect(vc)) {
-                if(queue.queueLength() == 0)
+                if(queue.queueLength() == 0) {
                     event.reply(String.format(Strings.CONNECTED_TO_VC, vc.getName())).queue();
-                    looping = false;
-                else
+                    queue.resetLoop();
+                }
+                else {
                     event.reply(String.format(Strings.CONNECTED_TO_VC_QUEUE_PRESERVED, vc.getName())).addEmbeds(queue.displayAsEmbed()).queue();
+                }
             } else {
                 event.reply(String.format(Strings.ALREADY_CONNECTED_ERROR, vc.getName())).queue();
             }
@@ -158,6 +161,14 @@ public class DiscordClient extends ListenerAdapter {
                 event.reply(Strings.QUEUE_LOOPED).queue();
             } else {
                 event.reply(Strings.QUEUE_UNLOOPED).queue();
+            }
+        }
+        else if(event.getName().equals("looptop"))
+        {
+            if (queue.toggleLooptop()) {
+                event.reply(Strings.SONG_LOOPED).queue();
+            } else {
+                event.reply(Strings.SONG_UNLOOPED).queue();
             }
         }
         else
