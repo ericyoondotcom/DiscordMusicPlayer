@@ -19,6 +19,9 @@ public class GuildQueue extends AudioEventAdapter {
     ArrayList<TrackInfo> queue = new ArrayList<TrackInfo>();
     String guildId;
 
+    boolean looping = false;
+    boolean loopingTop = false;
+
     public GuildQueue(String guildId){
         this.guildId = guildId;
     }
@@ -80,16 +83,32 @@ public class GuildQueue extends AudioEventAdapter {
     }
 
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason){
-        nowPlaying = null;
-        if(endReason == AudioTrackEndReason.FINISHED && endReason.mayStartNext){
-            startNextTrack();
+        if (endReason == AudioTrackEndReason.FINISHED && endReason.mayStartNext){
+            internal_onTrackEnd();
+        } else {
+            nowPlaying = null;
         }
+    }
+
+    public void internal_onTrackEnd(){
+        if (loopingTop) {
+            queue.add(0, nowPlaying);
+        } else if (looping) {
+            queue.add(queue.size(), nowPlaying);
+        }
+
+        nowPlaying = null;
+        startNextTrack();
     }
 
     public MessageEmbed displayAsEmbed(){
         Guild guild = Main.discord.client.getGuildById(guildId);
         EmbedBuilder builder = new EmbedBuilder();
-        builder.setTitle("Queue for " + guild.getName()).setColor(Color.CYAN);
+        builder.setTitle(
+                "Queue for " + guild.getName()
+                + (looping ? " 🔁" : "")
+                + (loopingTop ? " 🔂" : "")
+        ).setColor(Color.CYAN);
         if(nowPlaying != null) {
             Member addedBy = guild.getMemberById(nowPlaying.addedByID);
             builder.getDescriptionBuilder()
@@ -131,5 +150,36 @@ public class GuildQueue extends AudioEventAdapter {
             builder.setDescription("The queue is empty! Add some tracks using `/play`.");
         }
         return builder.build();
+    }
+
+    // @dev Changes the value of the loop while ensureing their is only one type active at a time
+    // @returns a boolean that repersents the new value of the loop state
+    public boolean toggleLoop() {
+        if (!looping) {
+            looping = true;
+            loopingTop = false;
+            return true;
+        } else {
+            looping = false;
+            return false;
+        }
+    }
+
+    // @dev Changes the value of the loop while ensureing their is only one type active at a time
+    // @returns a boolean that repersents the new value of the loop state
+    public boolean toggleLooptop() {
+        if (!loopingTop) {
+            loopingTop = true;
+            looping = false;
+            return true;
+        } else {
+            looping = false;
+            return false;
+        }
+    }
+
+    public void resetLoop() {
+        loopingTop = false;
+        looping = false;
     }
 }
