@@ -20,9 +20,9 @@ public class Strings {
     public static final String QUEUE_CLEARED = "\uD83D\uDCA5 Queue cleared!";
     public static final String BOT_DISCONNECT_SUCCESS = "Bye \uD83E\uDD72";
     public static final String QUEUE_SHUFFLED = "\uD83D\uDD00 Queue shuffled!";
-    public static final String SONG_LOOPED = "\uD83D\uDD01 Song looped!";
+    public static final String SONG_LOOPED = "🔂 Song looped!";
     public static final String SONG_UNLOOPED = "✅ Song Loop stoped!";
-    public static final String QUEUE_LOOPED = "\uD83D\uDD01 Looping current queue";
+    public static final String QUEUE_LOOPED = "🔁 Looping current queue";
     public static final String QUEUE_UNLOOPED = "✅ Stoped looping queue";
 
 

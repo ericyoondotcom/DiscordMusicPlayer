@@ -84,24 +84,31 @@ public class GuildQueue extends AudioEventAdapter {
 
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason){
         if (endReason == AudioTrackEndReason.FINISHED && endReason.mayStartNext){
-            if (loopingTop) {
-                queue.add(0, nowPlaying);
-            } else if (looping) {
-                queue.add(queue.size(), nowPlaying);
-            }
-
-            nowPlaying = null;
-            startNextTrack();
-
+            internal_onTrackEnd();
         } else {
             nowPlaying = null;
         }
     }
 
+    public void internal_onTrackEnd(){
+        if (loopingTop) {
+            queue.add(0, nowPlaying);
+        } else if (looping) {
+            queue.add(queue.size(), nowPlaying);
+        }
+
+        nowPlaying = null;
+        startNextTrack();
+    }
+
     public MessageEmbed displayAsEmbed(){
         Guild guild = Main.discord.client.getGuildById(guildId);
         EmbedBuilder builder = new EmbedBuilder();
-        builder.setTitle("Queue for " + guild.getName()).setColor(Color.CYAN);
+        builder.setTitle(
+                "Queue for " + guild.getName()
+                + (looping ? " 🔁" : "")
+                + (loopingTop ? " 🔂" : "")
+        ).setColor(Color.CYAN);
         if(nowPlaying != null) {
             Member addedBy = guild.getMemberById(nowPlaying.addedByID);
             builder.getDescriptionBuilder()

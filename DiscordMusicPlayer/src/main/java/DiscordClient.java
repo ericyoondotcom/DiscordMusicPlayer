@@ -119,7 +119,7 @@ public class DiscordClient extends ListenerAdapter {
         else if (event.getName().equals("skip"))
         {
             queue.connect(vc);
-            queue.startNextTrack();
+            queue.internal_onTrackEnd();
             event.reply(Strings.TRACK_SKIPPED).queue();
         }
         else if (event.getName().equals("pause"))
