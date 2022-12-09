@@ -1,13 +1,10 @@
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
@@ -50,8 +47,8 @@ public class DiscordClient extends ListenerAdapter {
         updateAction.addCommands(new CommandData("clear", d+"Clears the queue."));
         updateAction.addCommands(new CommandData("leave", d+"Disconnects from the voice channel."));
         updateAction.addCommands(new CommandData("shuffle", d+"Randomizes the queue."));
-        updateAction.addCommands(new CommandData("loop", d+"Toggels looping for the queue."));
-        updateAction.addCommands(new CommandData("looptop", d+"Toggels looping for the first song."));
+        updateAction.addCommands(new CommandData("loop", d+"Toggles looping for the queue."));
+        updateAction.addCommands(new CommandData("loopsong", d+"Toggles looping for the first song."));
         updateAction.queue();
     }
 
@@ -119,7 +116,7 @@ public class DiscordClient extends ListenerAdapter {
         else if (event.getName().equals("skip"))
         {
             queue.connect(vc);
-            queue.internal_onTrackEnd();
+            queue.internal_onTrackEnd(true);
             event.reply(Strings.TRACK_SKIPPED).queue();
         }
         else if (event.getName().equals("pause"))
@@ -145,6 +142,7 @@ public class DiscordClient extends ListenerAdapter {
         {
             if(Main.musicPlayer.disconnect(queue.guildId)){
 //                queue.clearQueue();
+                queue.resetLoop();
                 event.reply(Strings.BOT_DISCONNECT_SUCCESS).queue();
             } else {
                 event.reply(Strings.BOT_NOT_CONNECTED_ERROR).queue();
@@ -157,15 +155,15 @@ public class DiscordClient extends ListenerAdapter {
         }
         else if(event.getName().equals("loop"))
         {
-            if (queue.toggleLoop()) {
+            if (queue.toggleLoopQueue()) {
                 event.reply(Strings.QUEUE_LOOPED).queue();
             } else {
                 event.reply(Strings.QUEUE_UNLOOPED).queue();
             }
         }
-        else if(event.getName().equals("looptop"))
+        else if(event.getName().equals("loopsong"))
         {
-            if (queue.toggleLooptop()) {
+            if (queue.toggleLoopSong()) {
                 event.reply(Strings.SONG_LOOPED).queue();
             } else {
                 event.reply(Strings.SONG_UNLOOPED).queue();

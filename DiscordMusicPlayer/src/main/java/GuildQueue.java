@@ -19,8 +19,8 @@ public class GuildQueue extends AudioEventAdapter {
     ArrayList<TrackInfo> queue = new ArrayList<TrackInfo>();
     String guildId;
 
-    boolean looping = false;
-    boolean loopingTop = false;
+    boolean loopingQueue = false;
+    boolean loopingSong = false;
 
     public GuildQueue(String guildId){
         this.guildId = guildId;
@@ -77,26 +77,27 @@ public class GuildQueue extends AudioEventAdapter {
     }
 
     public void startNextTrack(){
-        if(queueLength() == 0) return;
+        if(queueLength() == 0) {
+            Main.musicPlayer.stopTrack(guildId);
+            nowPlaying = null;
+            return;
+        }
         Main.musicPlayer.playTrack(queue.get(0).loadedAudioTrack, guildId);
         nowPlaying = queue.remove(0);
     }
 
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason){
         if (endReason == AudioTrackEndReason.FINISHED && endReason.mayStartNext){
-            internal_onTrackEnd();
+            internal_onTrackEnd(false);
         } else {
             nowPlaying = null;
         }
     }
 
-    public void internal_onTrackEnd(){
-        if (loopingTop) {
-            queue.add(0, nowPlaying);
-        } else if (looping) {
-            queue.add(queue.size(), nowPlaying);
-        }
-
+    public void internal_onTrackEnd(boolean manuallySkipped){
+        System.out.println("Now playing: " + nowPlaying + ", looping: " + loopingQueue + ", manually skipped: " + manuallySkipped);
+        if (loopingSong && !manuallySkipped && nowPlaying != null) queue.add(0, nowPlaying);
+        else if (loopingQueue && nowPlaying != null) queue.add(queue.size(), nowPlaying);
         nowPlaying = null;
         startNextTrack();
     }
@@ -106,8 +107,8 @@ public class GuildQueue extends AudioEventAdapter {
         EmbedBuilder builder = new EmbedBuilder();
         builder.setTitle(
                 "Queue for " + guild.getName()
-                + (looping ? " 🔁" : "")
-                + (loopingTop ? " 🔂" : "")
+                + (loopingQueue ? " 🔁" : "")
+                + (loopingSong ? " 🔂" : "")
         ).setColor(Color.CYAN);
         if(nowPlaying != null) {
             Member addedBy = guild.getMemberById(nowPlaying.addedByID);
@@ -147,39 +148,41 @@ public class GuildQueue extends AudioEventAdapter {
                         .append(")`");
             }
         } else {
-            builder.setDescription("The queue is empty! Add some tracks using `/play`.");
+            builder.getDescriptionBuilder()
+                    .append("**Queue**\n")
+                    .append("The queue is empty! Add some tracks using `/play`.");
         }
         return builder.build();
     }
 
-    // @dev Changes the value of the loop while ensureing their is only one type active at a time
-    // @returns a boolean that repersents the new value of the loop state
-    public boolean toggleLoop() {
-        if (!looping) {
-            looping = true;
-            loopingTop = false;
+    // Changes the value of the loop while ensuring there is only one type active at a time
+    // @return a boolean that represents the new value of the loop state
+    public boolean toggleLoopQueue() {
+        if (!loopingQueue) {
+            loopingQueue = true;
+            loopingSong = false;
             return true;
         } else {
-            looping = false;
+            loopingQueue = false;
             return false;
         }
     }
 
-    // @dev Changes the value of the loop while ensureing their is only one type active at a time
-    // @returns a boolean that repersents the new value of the loop state
-    public boolean toggleLooptop() {
-        if (!loopingTop) {
-            loopingTop = true;
-            looping = false;
+    // Changes the value of the loop while ensuring there is only one type active at a time
+    // @return a boolean that represents the new value of the loop state
+    public boolean toggleLoopSong() {
+        if (!loopingSong) {
+            loopingSong = true;
+            loopingQueue = false;
             return true;
         } else {
-            looping = false;
+            loopingSong = false;
             return false;
         }
     }
 
     public void resetLoop() {
-        loopingTop = false;
-        looping = false;
+        loopingSong = false;
+        loopingQueue = false;
     }
 }
