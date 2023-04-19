@@ -7,12 +7,14 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
+
 
 public class GuildQueue extends AudioEventAdapter {
     TrackInfo nowPlaying = null;
@@ -26,7 +28,7 @@ public class GuildQueue extends AudioEventAdapter {
         this.guildId = guildId;
     }
 
-    public boolean connect(VoiceChannel vc){
+    public boolean connect(AudioChannel vc){
         return Main.musicPlayer.connect(vc, this);
     }
 

@@ -6,7 +6,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.util.HashMap;
@@ -28,7 +28,7 @@ public class MusicPlayer {
         return guild.getDiscordAudioManager().isConnected();
     }
 
-    public boolean connect(VoiceChannel vc, GuildQueue guildQueue){
+    public boolean connect(AudioChannel vc, GuildQueue guildQueue){
         AudioManager discordAudioManager = vc.getGuild().getAudioManager();
         if(!discordAudioManager.isConnected()){
             discordAudioManager.openAudioConnection(vc);

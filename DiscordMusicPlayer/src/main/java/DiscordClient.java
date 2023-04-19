@@ -1,12 +1,12 @@
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.ReadyEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 
 public class DiscordClient extends ListenerAdapter {
@@ -37,18 +37,18 @@ public class DiscordClient extends ListenerAdapter {
         }
         String d = debugGuildId == null ? "" : "[DEBUG] ";
         // To delete commands, just comment out the following lines
-        updateAction.addCommands(new CommandData("join", d+"Connect to your voice channel."));
-        updateAction.addCommands(new CommandData("play", d+"Add a track to the end of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
-        updateAction.addCommands(new CommandData("playtop", d+"Add a track to the beginning of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
-        updateAction.addCommands(new CommandData("skip", d+"Skips the next track(s) in the queue.").addOption(OptionType.INTEGER, "count", "How many tracks to skip.", false));
-        updateAction.addCommands(new CommandData("pause", d+"Pause playback."));
-        updateAction.addCommands(new CommandData("resume", d+"Resume playback."));
-        updateAction.addCommands(new CommandData("queue", d+"Sends the current queue."));
-        updateAction.addCommands(new CommandData("clear", d+"Clears the queue."));
-        updateAction.addCommands(new CommandData("leave", d+"Disconnects from the voice channel."));
-        updateAction.addCommands(new CommandData("shuffle", d+"Randomizes the queue."));
-        updateAction.addCommands(new CommandData("loop", d+"Toggles looping for the queue."));
-        updateAction.addCommands(new CommandData("loopsong", d+"Toggles looping for the first song."));
+        updateAction.addCommands(Commands.slash("join", d+"Connect to your voice channel."));
+        updateAction.addCommands(Commands.slash("play", d+"Add a track to the end of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
+        updateAction.addCommands(Commands.slash("playtop", d+"Add a track to the beginning of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
+        updateAction.addCommands(Commands.slash("skip", d+"Skips the next track(s) in the queue.").addOption(OptionType.INTEGER, "count", "How many tracks to skip.", false));
+        updateAction.addCommands(Commands.slash("pause", d+"Pause playback."));
+        updateAction.addCommands(Commands.slash("resume", d+"Resume playback."));
+        updateAction.addCommands(Commands.slash("queue", d+"Sends the current queue."));
+        updateAction.addCommands(Commands.slash("clear", d+"Clears the queue."));
+        updateAction.addCommands(Commands.slash("leave", d+"Disconnects from the voice channel."));
+        updateAction.addCommands(Commands.slash("shuffle", d+"Randomizes the queue."));
+        updateAction.addCommands(Commands.slash("loop", d+"Toggles looping for the queue."));
+        updateAction.addCommands(Commands.slash("loopsong", d+"Toggles looping for the first song."));
         updateAction.queue();
     }
 
@@ -59,10 +59,9 @@ public class DiscordClient extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommand(final SlashCommandEvent event) {
-        VoiceChannel vc = event.getMember().getVoiceState().getChannel();
+    public void onSlashCommandInteraction(final SlashCommandInteractionEvent event) {
+        AudioChannel vc = event.getMember().getVoiceState().getChannel();
         final GuildQueue queue = Main.queueManager.getOrCreateQueue(event.getMember().getGuild().getId());
-
         if (event.getName().equals("join"))
         {
             if (vc == null) {
