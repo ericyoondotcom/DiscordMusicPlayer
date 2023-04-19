@@ -13,3 +13,7 @@ buildNumber.properties
 
 .idea/
 config.properties
+
+DiscordMusicPlayer/.DS_Store
+
+.DS_Store

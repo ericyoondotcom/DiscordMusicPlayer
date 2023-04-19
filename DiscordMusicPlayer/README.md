@@ -15,7 +15,7 @@ Add a file called `config.properties` into the folder from which the program is 
 ## Building from source
 - Install all Maven packages from pom.xml.
 - [Follow these instructions to compile to JAR](https://stackoverflow.com/a/45303637/4699945). (Create a new artifact, "JAR from Modules",
-repoint MANIFEST.MF from `.../main/java` to `.../main/resources`, and press "Build Artifacts" to create the JAR)
+repoint MANIFEST.MF from `.../main/java` to `.../main/resources`, and press "Build Artifacts" > "Rebuild" to create the JAR)
 
 ## Deploying with pm2
 Since pm2 gets a bit strange when calling JARs with Java, we have to create a bash script that starts the Java process.

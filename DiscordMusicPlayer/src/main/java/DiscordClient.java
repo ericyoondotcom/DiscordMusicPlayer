@@ -37,18 +37,20 @@ public class DiscordClient extends ListenerAdapter {
         }
         String d = debugGuildId == null ? "" : "[DEBUG] ";
         // To delete commands, just comment out the following lines
-        updateAction.addCommands(Commands.slash("join", d+"Connect to your voice channel."));
-        updateAction.addCommands(Commands.slash("play", d+"Add a track to the end of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
-        updateAction.addCommands(Commands.slash("playtop", d+"Add a track to the beginning of the queue.").addOption(OptionType.STRING, "track", "The track to play", true));
-        updateAction.addCommands(Commands.slash("skip", d+"Skips the next track(s) in the queue.").addOption(OptionType.INTEGER, "count", "How many tracks to skip.", false));
-        updateAction.addCommands(Commands.slash("pause", d+"Pause playback."));
-        updateAction.addCommands(Commands.slash("resume", d+"Resume playback."));
-        updateAction.addCommands(Commands.slash("queue", d+"Sends the current queue."));
-        updateAction.addCommands(Commands.slash("clear", d+"Clears the queue."));
-        updateAction.addCommands(Commands.slash("leave", d+"Disconnects from the voice channel."));
-        updateAction.addCommands(Commands.slash("shuffle", d+"Randomizes the queue."));
-        updateAction.addCommands(Commands.slash("loop", d+"Toggles looping for the queue."));
-        updateAction.addCommands(Commands.slash("loopsong", d+"Toggles looping for the first song."));
+        updateAction.addCommands(
+                Commands.slash("join", d+"Connect to your voice channel."),
+                Commands.slash("play", d+"Add a track to the end of the queue.").addOption(OptionType.STRING, "track", "The track to play", true),
+                Commands.slash("playtop", d+"Add a track to the beginning of the queue.").addOption(OptionType.STRING, "track", "The track to play", true),
+                Commands.slash("skip", d+"Skips the next track(s) in the queue.").addOption(OptionType.INTEGER, "count", "How many tracks to skip.", false),
+                Commands.slash("pause", d+"Pause playback."),
+                Commands.slash("resume", d+"Resume playback."),
+                Commands.slash("queue", d+"Sends the current queue."),
+                Commands.slash("clear", d+"Clears the queue."),
+                Commands.slash("leave", d+"Disconnects from the voice channel."),
+                Commands.slash("shuffle", d+"Randomizes the queue."),
+                Commands.slash("loop", d+"Toggles looping for the queue."),
+                Commands.slash("loopsong", d+"Toggles looping for the first song.")
+        );
         updateAction.queue();
     }
 
